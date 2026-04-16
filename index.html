@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0E1E19">
+    <title>Registro de Inicios - Fábrica</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        :root {
+            --bg-white: #FFFFFF;
+            --panel-border: #223C33;
+            --accent-orange: #CF8528;
+            --accent-dark: #0E1E19;
+            --text-black: #030807;
+            --row-grey: #f9f9f9;
+        }
+
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: #f0f0f0;
+            color: var(--text-black);
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Contenedor optimizado para expandirse al girar el celular */
+        #informe-container {
+            width: 100%;
+            max-width: 900px; /* Permite estirarse en modo horizontal */
+            margin: 0 auto;
+            background-color: var(--bg-white);
+            padding: 10px; /* Reducido para mayor compacidad */
+            box-sizing: border-box;
+        }
+
+        h1 { color: var(--accent-orange); font-size: 1.1rem; text-align: center; margin: 8px 0; text-transform: uppercase; border-bottom: 2px solid var(--accent-orange); }
+        h2 { color: var(--accent-dark); font-size: 0.8rem; border-bottom: 1px solid var(--panel-border); margin: 12px 0 6px 0; font-weight: 900; }
+
+        .form-row { margin-bottom: 8px; }
+        label { display: block; font-size: 0.65rem; font-weight: 700; color: var(--accent-dark); margin-bottom: 2px; }
+
+        input, textarea {
+            width: 100%;
+            padding: 5px 6px; /* Espaciado interno reducido */
+            background-color: var(--bg-white);
+            border: 1px solid #ccc;
+            color: var(--text-black);
+            border-radius: 4px;
+            font-family: 'Lato', sans-serif;
+            font-size: 11px; /* Fuente más compacta */
+            box-sizing: border-box;
+        }
+
+        textarea.auto-expand {
+            resize: none;
+            overflow: hidden;
+            min-height: 26px;
+        }
+
+        .panel {
+            border: 1px solid var(--panel-border);
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 4px; }
+        th, td { border: 1px solid var(--panel-border); padding: 3px; text-align: left; font-size: 11px; vertical-align: top; }
+        th { background-color: var(--accent-dark); color: white; text-transform: uppercase; font-size: 9px; text-align: center;}
+        
+        .col-maquina { width: 55px; font-weight: 900; background-color: var(--row-grey); text-align: center; vertical-align: middle;}
+        .col-hora { width: 75px; }
+        .col-codigo { width: 55px; }
+        .col-gpm { width: 55px; }
+        .col-obs { width: auto; } /* Esta columna absorberá el espacio extra al girar la pantalla */
+
+        td input, td textarea { border: none !important; background: transparent; width: 100%; font-size: 11px; padding: 2px;}
+
+        .btn-export {
+            display: block;
+            width: 95%;
+            max-width: 900px;
+            margin: 15px auto 30px auto;
+            background-color: var(--accent-dark);
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 900;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .pdf-temp-text {
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-size: 11px; /* Ajustado a la nueva escala compacta */
+            font-family: 'Lato', sans-serif;
+            padding: 2px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="informe-container">
+        <h1>Registro de Inicios</h1>
+        
+        <div class="panel">
+            <div class="form-row">
+                <label>Fecha de Reporte</label>
+                <input type="text" id="fecha-actual" readonly>
+            </div>
+            <div class="form-row">
+                <label>Nombre del Operador</label>
+                <input type="text" id="nombre-operador" placeholder="Escriba su nombre...">
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>🔹 SECCIÓN 1: PROCESOS</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-maquina">Equipo</th>
+                        <th class="col-hora">Hora Inicio</th>
+                        <th class="col-obs">Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-procesos"></tbody>
+            </table>
+        </div>
+
+        <div class="panel">
+            <h2>🔹 SECCIÓN 2: ENVASADO</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-maquina">Máquina</th>
+                        <th class="col-hora">Hora Inicio</th>
+                        <th class="col-obs">Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-envasado"></tbody>
+            </table>
+        </div>
+
+        <div class="panel">
+            <h2>🔹 SECCIÓN 3: GOLPES POR MINUTO</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-maquina">Máquina</th>
+                        <th class="col-codigo">Cód</th>
+                        <th class="col-gpm">GPM</th>
+                        <th class="col-obs">Obs.</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-gpm"></tbody>
+            </table>
+        </div>
+
+        <div class="panel">
+            <h2>📝 OBSERVACIONES GENERALES</h2>
+            <textarea id="obs-final" class="auto-expand" rows="3" placeholder="Novedades del turno..."></textarea>
+        </div>
+    </div>
+
+    <button class="btn-export" onclick="generarPDF()">📤 EXPORTAR PDF COMPLETO</button>
+
+    <script>
+        // Configurar Fecha Automática DD/MM/AAAA
+        const hoy = new Date();
+        const dia = String(hoy.getDate()).padStart(2, '0');
+        const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+        const anio = hoy.getFullYear();
+
+        const fechaPantalla = `${dia}/${mes}/${anio}`;
+        const fechaArchivo = `${dia}-${mes}-${anio}`; // Para evitar errores al guardar el archivo
+
+        document.getElementById('fecha-actual').value = fechaPantalla;
+
+        // Auto-expandir textareas
+        document.addEventListener('input', function (event) {
+            if (event.target.classList.contains('auto-expand')) {
+                event.target.style.height = 'auto';
+                event.target.style.height = (event.target.scrollHeight) + 'px';
+            }
+        }, false);
+
+        // Llenar Tablas dinámicamente
+        const fillTable = (id, items, type) => {
+            const t = document.getElementById(id);
+            items.forEach(l => {
+                let r = `<tr><td class="col-maquina">${l}</td>`;
+                if(type === 'simple') {
+                    r += `<td class="col-hora"><input type="time"></td>
+                          <td class="col-obs"><textarea class="auto-expand" rows="1"></textarea></td>`;
+                } else {
+                    r += `<td class="col-codigo"><input type="number"></td>
+                          <td class="col-gpm"><input type="text"></td>
+                          <td class="col-obs"><textarea class="auto-expand" rows="1"></textarea></td>`;
+                }
+                t.innerHTML += r + `</tr>`;
+            });
+        };
+
+        fillTable('tabla-procesos', ['F1','F2','F3','EXT'], 'simple');
+        fillTable('tabla-envasado', ['ENV-1','ENV-2','ENV-3','ENV-4','ENV-5','ENV-6','ENV-7','COMBO'], 'simple');
+        fillTable('tabla-gpm', ['ENV-1','ENV-2','ENV-3','ENV-4','ENV-5','ENV-6','ENV-7'], 'gpm');
+
+        // Exportar a PDF
+        function generarPDF() {
+            const element = document.getElementById('informe-container');
+            const btn = document.querySelector('.btn-export');
+            btn.innerText = "Ajustando textos...";
+
+            const inputs = document.querySelectorAll('input, textarea');
+            const divClones = [];
+
+            inputs.forEach(el => {
+                const div = document.createElement('div');
+                div.className = 'pdf-temp-text';
+                
+                if(el.type === 'time' && el.value) {
+                    div.innerText = el.value;
+                    div.style.textAlign = 'center';
+                } else {
+                    div.innerText = el.value || ' '; 
+                }
+
+                el.style.display = 'none';
+                el.parentNode.insertBefore(div, el);
+                divClones.push({ div: div, input: el });
+            });
+
+            setTimeout(() => {
+                const heightPx = element.scrollHeight;
+                const widthPx = element.scrollWidth;
+                const heightMm = (heightPx * 25.4) / 96;
+                const widthMm = (widthPx * 25.4) / 96;
+
+                const opt = {
+                    margin: 0,
+                    filename: `Informe_Inicios_${fechaArchivo}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, scrollY: 0, backgroundColor: '#FFFFFF' },
+                    jsPDF: { unit: 'mm', format: [widthMm + 5, heightMm + 5], orientation: 'portrait' }
+                };
+
+                html2pdf().set(opt).from(element).save().then(() => {
+                    divClones.forEach(item => {
+                        item.div.remove();
+                        item.input.style.display = '';
+                    });
+                    btn.innerText = "📤 EXPORTAR PDF COMPLETO";
+                });
+            }, 300);
+        }
+    </script>
+</body>
+</html>
